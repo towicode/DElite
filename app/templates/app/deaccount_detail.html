@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+<p><a class="btn btn-default" href="{% url 'app_deaccount_list' %}">DEAccount Listing</a></p>
+<table class="table">
+<tr><td>DEusername</td><td>{{ object.DEusername }}</td></tr>
+<tr><td>DEpassword</td><td>{{ object.DEpassword }}</td></tr>
+<tr><td>DEToken</td><td>{{ object.DEToken }}</td></tr>
+<tr><td>DETokenDate</td><td>{{ object.DETokenDate }}</td></tr>
+</table>
+<a class="btn btn-primary" href="{{object.get_update_url}}">Edit DEAccount</a>
+
+{% endblock %}

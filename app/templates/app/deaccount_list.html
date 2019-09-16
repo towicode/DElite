@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+<p><a class="btn btn-default" href="{% url 'app_deaccount_list' %}">DEAccount Listing</a></p>
+<table class="table">
+<tr>
+<td>ID</td><td>Link</td>
+    <td>DEusername</td>
+    <td>DEpassword</td>
+    <td>DEToken</td>
+    <td>DETokenDate</td>
+</tr>
+{% for object in object_list %}
+<tr>
+    <td>{{object.pk}}</td>
+    <td><a href="{{object.get_absolute_url}}">{{object}}</a></td>
+    <td>{{ object.DEusername }}</td>
+    <td>{{ object.DEpassword }}</td>
+    <td>{{ object.DEToken }}</td>
+    <td>{{ object.DETokenDate }}</td>
+</tr>
+{% endfor %}
+</table><a class="btn btn-primary" href="{% url 'app_deaccount_create' %}">Create new DEAccount</a>
+{% endblock %}
