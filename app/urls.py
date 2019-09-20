@@ -28,6 +28,7 @@ urlpatterns = [
     url(r'^app/deinfo/', views.de_app_get_information, name='app_de_app_get_information'),
     url(r'^app/desubmit/', views.de_submit_app, name='app_de_submit_app'),
     url(r'^app/deappsearch/', views.de_apps_search, name='app_de_apps_search'),
+    url(r'^app/defiles/', views.de_file_list, name='app_de_file_list'),
     url(r'^app/', views.load_SPA, name='load_SPA'),
 
     

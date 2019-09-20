@@ -151,6 +151,37 @@ def de_app_get_information(request):
 
     return JsonResponse(data)
 
+def de_file_list(request):
+    data = {"response":False}
+    path = request.GET.get('path', None)
+
+    
+    if path is None:
+        print ("NO path in de_file_list")
+        return jsonResponse(data)
+
+    query_params = {"path": path, "limit": 100, "offset": 0}
+
+
+    username = None
+
+
+    if request.user.is_authenticated:
+        username = request.user.username
+        try:
+            acc = DEAccount.objects.get(djangouser__username=username)
+            url = "https://de.cyverse.org/terrain/secured/filesystem/paged-directory"
+            auth_headers = {"Authorization": "Bearer " + acc.DEToken}
+            r = requests.get(url, headers=auth_headers, params=query_params)
+            r.raise_for_status()
+            return JsonResponse(r.json())
+        except Exception as e:
+            print (str(e))
+            print ("There was an exception")
+            pass
+
+    return JsonResponse(data)
+
 def de_submit_app(request):
     data = {"response":False}
 

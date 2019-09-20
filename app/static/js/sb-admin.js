@@ -1,4 +1,4 @@
-(function($) {
+(function ($) {
   "use strict"; // Start of use strict
 
 
@@ -7,15 +7,17 @@
   //*************** */
   function setCookie(cname, cvalue, exdays) {
     var d = new Date();
-    d.setTime(d.getTime() + (exdays*24*60*60*1000));
-    var expires = "expires="+ d.toUTCString();
+    d.setTime(d.getTime() + (exdays * 24 * 60 * 60 * 1000));
+    var expires = "expires=" + d.toUTCString();
     document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
   }
+
+
 
   function getCookie(cname) {
     var name = cname + "=";
     var ca = document.cookie.split(';');
-    for(var i = 0; i < ca.length; i++) {
+    for (var i = 0; i < ca.length; i++) {
       var c = ca[i];
       while (c.charAt(0) == ' ') {
         c = c.substring(1);
@@ -27,18 +29,30 @@
     return "";
   }
 
+  $.getCookie = function (cname) {
+    return getCookie(cname);
+  }
+
 
   //  ***************
   //  *** Loader ****
   // ****************
 
-  var showLoader = function(){
+  $.showLoader = function () {
+    showLoader();
+  }
+
+  $.hideLoader = function () {
+    hideLoader();
+  }
+
+  var showLoader = function () {
     $('#loader').show();
     $('#delitemain').parent().parent().css("pointer-events", "none")
     $('#delitemain').parent().parent().css("background-color", "gray")
   }
 
-  var hideLoader = function(){
+  var hideLoader = function () {
     $('#loader').hide();
     $('#delitemain').parent().parent().css("pointer-events", "inherit")
     $('#delitemain').parent().parent().css("background-color", "inherit")
@@ -47,7 +61,7 @@
   //  ***************
   //  **** Login ****
   //  ***************
-    var applyTemplateLogin = function(){
+  var applyTemplateLogin = function () {
     var login_html = `
     <div class="card card-login mx-auto mt-5">
     <div class="card-header">Discovery Environment Login</div>
@@ -72,45 +86,44 @@
 
     </div>
   </div>`
-  $('#delitemain').html(login_html);
+    $('#delitemain').html(login_html);
   };
-  
+
   $(document).on("click", "#deloginbutton",
-  function(){
-    showLoader();
-    var deusername = $('#inputEmail').val();
-    setCookie("deusername", deusername, 1);
-    var depassword = $('#inputPassword').val();
+    function () {
+      showLoader();
+      var deusername = $('#inputEmail').val();
+      setCookie("deusername", deusername, 1);
+      var depassword = $('#inputPassword').val();
 
-    var url = 'delogin/';
-    var data = {'deusername': deusername, 'depassword': depassword};
+      var url = 'delogin/';
+      var data = { 'deusername': deusername, 'depassword': depassword };
 
-    fetch(url, {
-      method: 'POST', // or 'PUT'
-      body: JSON.stringify(data), // data can be `string` or {object}!
-      headers:{
-        'Content-Type': 'application/json',
-        "X-CSRFToken": csrftoken
-      }
-    }).then(res => res.json())
-    .then(response => {
-      console.log('Success:', JSON.stringify(response))
-      if (response.response == true)
-      {
-        console.log("logged in");
-        reindexPage();
-      }
+      fetch(url, {
+        method: 'POST', // or 'PUT'
+        body: JSON.stringify(data), // data can be `string` or {object}!
+        headers: {
+          'Content-Type': 'application/json',
+          "X-CSRFToken": csrftoken
+        }
+      }).then(res => res.json())
+        .then(response => {
+          console.log('Success:', JSON.stringify(response))
+          if (response.response == true) {
+            console.log("logged in");
+            reindexPage();
+          }
 
-    })
-    .catch(error => console.error('Error:', error));
+        })
+        .catch(error => console.error('Error:', error));
 
-    hideLoader();
-  });
+      hideLoader();
+    });
 
 
-  var applyHomeTemplate = function(){
-    var home_html = 
-    `
+  var applyHomeTemplate = function () {
+    var home_html =
+      `
     <h1>Welcome to DE<sub>lite</sub></h1>
         <hr/>
         <p>This is a demo using the DE Terrain API with Django. 
@@ -120,17 +133,55 @@
 
   }
 
+  // ***************
+  // ***** TREE ****
+  //****************
+
+  var applyTreeTemplate = function () {
+    var tree_html = `
+    `
+    $('#delitemain').html(tree_html);
+  }
+  
+  $('#menutree').click(function () {
+    reindexPage("tree");
+    $.treeInit();
+  });
+
   // ****************
   // **** Files *****
   // ****************
 
-  
+
+  var applyFilesTemplate = function (path = null) {
+    var files_html = `
+    <div class="filemanager">
+      <div class="breadcrumbs"></div>
+
+      <ul class="data"></ul>
+
+      <div class="nothingfound">
+        <div class="nofiles"></div>
+        <span>No files here.</span>
+      </div>
+
+    </div>
+    `
+    $('#delitemain').html(files_html);
+    $.init();
+  }
+
+  $('#menufiles').click(function () {
+    reindexPage("files");
+  });
+
+
 
   //  ***************
   //  *** App List **
   //  ***************
 
-  var applySearchTemplate = function(term="DE Word Count"){
+  var applySearchTemplate = function (term = "DE Word Count") {
     var search_html = `
     <nav class="navbar navbar-light bg-light justify-content-between">
       <a class="navbar-brand"></a>
@@ -142,16 +193,16 @@
     `
     var encoded = encodeURI(term);
     showLoader();
-    fetch('deappsearch/?searchterm='+encoded)
-    .then(response => response.json())
-    .then(data => {
-      if (data.total != 0){
+    fetch('deappsearch/?searchterm=' + encoded)
+      .then(response => response.json())
+      .then(data => {
+        if (data.total != 0) {
 
-        const markup = 
-        `
-        <div class="row">
-          ${data.apps.map(idea => 
+          const markup =
             `
+        <div class="row">
+          ${data.apps.map(idea =>
+              `
             <div class="col-sm-4">
               <div class="card">
                 <div class="card-body">
@@ -164,26 +215,26 @@
             `
             ).join('')}
         `;
-        $('#delitemain').html(search_html+markup);
-        hideLoader();
+          $('#delitemain').html(search_html + markup);
+          hideLoader();
 
-      }
-    });    
+        }
+      });
   }
 
-  $('#menuapps').click(function(){
+  $('#menuapps').click(function () {
     reindexPage("apps");
   });
 
   $(document).on("click", "#appsearchbtn",
-  function(){
-    reindexPage("apps", $("#appsearchinput").val())
-  });
+    function () {
+      reindexPage("apps", $("#appsearchinput").val())
+    });
 
   $(document).on("click", ".multiappbtn",
-  function(event){
-    reindexPage("app", event.target)
-  });
+    function (event) {
+      reindexPage("app", event.target)
+    });
 
 
   //  ***************
@@ -195,27 +246,27 @@
   var stored_app_id = ""
   var stored_system_id = ""
 
-  var applyAppTemplate = function(elem){
+  var applyAppTemplate = function (elem) {
     var jelm = $(elem);//convert to jQuery Element
     stored_app_id = jelm.data("id");
     stored_system_id = jelm.data("system");
     var app_id = encodeURI(jelm.data("id"));
     var system_id = encodeURI(jelm.data("system"))
     showLoader();
-    fetch('deinfo/?app_id='+app_id+'&system_id='+system_id)
-    .then(response => response.json())
-    .then(data => {
-      console.log(data);
-      var groups = data.groups;
-      var inputs = ``
-      stored_groups_length = groups.length;
-      for (var i =0 ; i < groups.length; i++){
-        var paramaters = groups[i].parameters;
-        stored_app_length.push(paramaters.length);
-        for (var j = 0 ; j < paramaters.length ; j++){
-          var param = paramaters[j];
-            var new_input = 
-            `
+    fetch('deinfo/?app_id=' + app_id + '&system_id=' + system_id)
+      .then(response => response.json())
+      .then(data => {
+        console.log(data);
+        var groups = data.groups;
+        var inputs = ``
+        stored_groups_length = groups.length;
+        for (var i = 0; i < groups.length; i++) {
+          var paramaters = groups[i].parameters;
+          stored_app_length.push(paramaters.length);
+          for (var j = 0; j < paramaters.length; j++) {
+            var param = paramaters[j];
+            var new_input =
+              `
             <div class="form-group">
               <label for="input${i}${j}">${param.label}</label>
               <input data-id="${param.id}" type="text" class="form-control" id="input${i}${j}" aria-describedby="helpme${i}${j}" placeholder="...">
@@ -224,10 +275,10 @@
             `
 
             inputs += new_input;
+          }
         }
-      }
-      var app_html = 
-      `
+        var app_html =
+          `
       <h1> ${jelm.data("name")} </h1>
       <sub> If you're using the DE Word Count App try using this as the File Input! </sub>
       <br/>
@@ -238,101 +289,116 @@
         <button id="submit-app" class="btn btn-primary">Submit</button>
       </form>
       `
-      $('#delitemain').html(app_html);
+        $('#delitemain').html(app_html);
         hideLoader();
       });
   }
 
   $(document).on("click", "#submit-app",
-  function(){
-    var config = {};
-    for (var i = 0; i < stored_groups_length; i++){
+    function () {
+      var config = {};
+      for (var i = 0; i < stored_groups_length; i++) {
 
-      for ( var j = 0; j < stored_app_length[i]; j++){
+        for (var j = 0; j < stored_app_length[i]; j++) {
 
-        var key = ($('#input'+i+''+j).data("id"))
-        var val = ($('#input'+i+''+j).val())
+          var key = ($('#input' + i + '' + j).data("id"))
+          var val = ($('#input' + i + '' + j).val())
 
-        config[key] = val;
+          config[key] = val;
+        }
       }
-    }
 
-    var url = 'desubmit/';
-    var data = {'username': getCookie("deusername"), 'config': config, 'app_id': stored_app_id, 
-                'system_id': stored_system_id};
+      var url = 'desubmit/';
+      var data = {
+        'username': getCookie("deusername"), 'config': config, 'app_id': stored_app_id,
+        'system_id': stored_system_id
+      };
 
-    showLoader();
+      showLoader();
 
-    fetch(url, {
-      method: 'POST', // or 'PUT'
-      body: JSON.stringify(data), // data can be `string` or {object}!
-      headers:{
-        'Content-Type': 'application/json',
-        "X-CSRFToken": csrftoken
-      }
-    }).then(res => res.json())
-    .then(response => {
-      console.log('Success:', JSON.stringify(response));
-      hideLoader();
-      if (response.status == "Submitted"){
-        var submitted_html = `
+      fetch(url, {
+        method: 'POST', // or 'PUT'
+        body: JSON.stringify(data), // data can be `string` or {object}!
+        headers: {
+          'Content-Type': 'application/json',
+          "X-CSRFToken": csrftoken
+        }
+      }).then(res => res.json())
+        .then(response => {
+          console.log('Success:', JSON.stringify(response));
+          hideLoader();
+          if (response.status == "Submitted") {
+            var submitted_html = `
         <div class="p-3 mb-2 bg-success text-white">Job Was Sucessfully Submitted!</div>
         `
-  
-        $('#delitemain').html(submitted_html);
 
-        
-      }
+            $('#delitemain').html(submitted_html);
 
-    })
-    .catch(error => {
-      console.error('Error:', error);
-      hideLoader();
+
+
+          }
+
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          hideLoader();
+        });
+
+
     });
-
-    
-  });
 
 
 
   //  ***************
   //  **** Index ****
   //  ***************
-  var reindexPage = function(term="home", args=null){
+  var reindexPage = function (term = "home", args = null) {
     showLoader();
     fetch('deinfoset/')
-    .then(response => response.json())
-    .then(data => {
-      if (data.response == true){
+      .then(response => response.json())
+      .then(data => {
 
-        switch(term){
-          case "home":
-            applyHomeTemplate();
-            break;
-          case "apps":
-            if (args != null){
-              applySearchTemplate(args);
+        if (data.response == true) {
+
+          switch (term) {
+            case "home":
+              applyHomeTemplate();
+              $('#jstree_demo_div').html("");
               break;
-            }
-            applySearchTemplate();
-            break;
-          case "app":
-            applyAppTemplate(args);
-            break;
+            case "apps":
+              if (args != null) {
+                applySearchTemplate(args);
+                $('#jstree_demo_div').html("");
+                break;
+              }
+              applySearchTemplate();
+              $('#jstree_demo_div').html("");
+              break;
+            case "app":
+              $('#jstree_demo_div').html("");
+              applyAppTemplate(args);
+              break;
+            case "files":
+              $('#jstree_demo_div').html("");
+              applyFilesTemplate();
+              break;
+            case "tree":
+              applyTreeTemplate();
+              break;
 
 
+          }
+        } else {
+          applyTemplateLogin();
         }
-      } else {
-        applyTemplateLogin();
-      }
-    })
+      })
 
     hideLoader();
   }
 
   reindexPage();
 
-  
+
 
 
 
@@ -367,7 +433,7 @@
 
 
   // Prevent the content wrapper from scrolling when the fixed side navigation hovered over
-  $('body.fixed-nav .sidebar').on('mousewheel DOMMouseScroll wheel', function(e) {
+  $('body.fixed-nav .sidebar').on('mousewheel DOMMouseScroll wheel', function (e) {
     if ($(window).width() > 768) {
       var e0 = e.originalEvent,
         delta = e0.wheelDelta || -e0.detail;
@@ -377,7 +443,7 @@
   });
 
   // Scroll to top button appear
-  $(document).on('scroll', function() {
+  $(document).on('scroll', function () {
     var scrollDistance = $(this).scrollTop();
     if (scrollDistance > 100) {
       $('.scroll-to-top').fadeIn();
@@ -387,7 +453,7 @@
   });
 
   // Smooth scrolling using jQuery easing
-  $(document).on('click', 'a.scroll-to-top', function(event) {
+  $(document).on('click', 'a.scroll-to-top', function (event) {
     var $anchor = $(this);
     $('html, body').stop().animate({
       scrollTop: ($($anchor.attr('href')).offset().top)
