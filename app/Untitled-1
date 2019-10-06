@@ -1,0 +1,1 @@
+curl -H 'Authorization:Bearer AT-1294-iDHdkSvF2Ed6RoAbkF082f9AzlZuJ0j7' -d '{"paths":"iplant/home/toddwickizer/test_datauntitled56"]}' 'https://de.cyverse.org/terrain/secured/filesystem/tickets?public=1'

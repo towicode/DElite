@@ -142,7 +142,7 @@
     `
     $('#delitemain').html(tree_html);
   }
-  
+
   $('#menutree').click(function () {
     reindexPage("tree");
     $.treeInit();
@@ -349,6 +349,126 @@
 
 
 
+  // ***************
+  // *** Transfer **
+  // ***************
+
+  var applyTransferTemplate = async function () {
+
+    var un = $.getCookie("deusername");
+    var term = "/iplant/home/" + un;
+    var encoded = encodeURI(term);
+
+    $.showLoader();
+
+
+    try {
+      let [responsea, responseb] = await Promise.all([
+        fetch('defiles/?path=' + encoded),
+        fetch("localfiles/")
+      ]);
+
+      let [raw_data, local_data] = await Promise.all([
+        responsea.json(),
+        responseb.json(),
+      ]);
+
+      console.log(raw_data);
+      console.log(local_data);
+
+      var folders = ``;
+      for (var i = 0; i < raw_data.folders.length; i++) {
+        var folder = raw_data.folders[i];
+        console.log(folder);
+        var new_folder = `
+          <div>
+            <a class="transferfolder" href="#" data-path="${folder.path}">
+              <span>
+                <div class="ficon"></div> ${folder.label}
+              </span>
+            </a>
+          </div>
+          `
+        folders += new_folder
+      }
+
+      var options = ``;
+      for (var i = 0; i < raw_data.files.length; i++) {
+        var file = raw_data.files[i];
+        var new_option = `<option data-info="${file.path}">${file.label}</option>`;
+        options += new_option;
+      }
+
+      var localfiles = ``;
+      for (var i = 0; i < local_data.length; i++) {
+        var new_localfile = `<option>${local_data[i]}</option>`;
+        localfiles += new_localfile;
+      }
+
+      var transferHtml = `
+        <div class="container">
+          <div class="row">
+            <div class="col-sm-5 ">
+              <h3 id="transferpath"> /Path/To/Wherever </h3>
+              <div class = "transferbox">
+                <div id="transferremotefolders">${folders}</div>
+                <select id="transferremotebox" class="leftbox" size=25>
+                ${options}
+                </select>
+              </div>
+            </div>
+            <div class="col-sm-1">
+            <div class="bigtransfer">
+            <button id="leftbutton" class=""> &leftarrow; Transfer</button>
+            <hr /> 
+            <button id="rightbutton" class=""> &rightarrow; Transfer</button>
+            </div>
+    
+            </div>
+            <div class="col-sm-5 ">
+              <h3> Server Side Storage </h3>
+              <div class = "transferbox">
+                <select id="transferlocalbox" name="leftbox" class="leftbox" size=30>
+                ${localfiles}
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+        `
+      $('#delitemain').html(transferHtml);
+      $.hideLoader();
+
+      $(document).on("click", "#rightbutton",
+        function (event) {
+          console.log("testing");
+          console.log($("#transferremotebox :selected").text()); // The text content of the selected option
+
+          var path = $("#transferremotebox :selected").data('info');
+          var data = {
+            'path': path
+          }
+          console.log(data)
+          fetch("deticket/", {
+            method: 'POST', 
+            body: JSON.stringify(data),
+            headers: {
+              'Content-Type': 'application/json',
+              "X-CSRFToken": csrftoken
+            }
+          }).then(res => res.json())
+            .then(response => {
+              console.log(response);
+            });
+        });
+    }
+    catch (err) {
+      console.log(err);
+    };
+  }
+
+
+
   //  ***************
   //  **** Index ****
   //  ***************
@@ -380,7 +500,9 @@
               break;
             case "files":
               $('#jstree_demo_div').html("");
-              applyFilesTemplate();
+              //applyFilesTemplate();
+              applyTransferTemplate();
+
               break;
             case "tree":
               applyTreeTemplate();

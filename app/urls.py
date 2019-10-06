@@ -29,6 +29,8 @@ urlpatterns = [
     url(r'^app/desubmit/', views.de_submit_app, name='app_de_submit_app'),
     url(r'^app/deappsearch/', views.de_apps_search, name='app_de_apps_search'),
     url(r'^app/defiles/', views.de_file_list, name='app_de_file_list'),
+    url(r'^app/localfiles/', views.de_get_local_files, name='de_get_local_files'),
+    url(r'^app/deticket/', views.de_create_ticket, name='de_create_ticket'),
     url(r'^app/', views.load_SPA, name='load_SPA'),
 
     

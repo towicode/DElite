@@ -107,9 +107,10 @@
         <!-- Page Content -->
         <div id="loader" class="loader"></div>
 
-        <div id="delitemain">
+    	<div id="delitemain">
         
-        </div>
+        </div> 
+
 
         <div id="jstree_demo_div"></div>
 
@@ -172,6 +173,78 @@
 /*-------------------------
 	Demo page
 -------------------------*/
+
+
+  
+  .ficon {
+    width: 30px;
+    height: 20px;
+    display: inline-block;
+    margin: auto;
+    position: relative;
+    background-color: #708090;
+    border-radius: 0 3px 3px 3px;
+    /*box-shadow: 4px 4px 7px rgba(0, 0, 0, 0.59);*/
+    margin-bottom: -8px;
+    margin-top: 12px;
+  }
+
+  .ficon:before {
+    content: '';
+    width: 50%;
+    height: 0.2em;
+    border-radius: 0 20px 0 0;
+    background-color: #708090;
+    position: absolute;
+    top: -0.2em;
+    left: 0px;
+  }
+
+.leftbox {
+	border:0px;
+   outline:0px;
+   width: 100%;
+}
+
+
+.transferbox {
+	border: 1px black solid;
+}
+
+.transferbox select {
+	margin-top:10px;
+	border-top: dotted 1px black;
+}
+
+.transferbox option {
+	height: 25px;
+}
+
+.bigtransfer{
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.left{
+  display : flex;
+  justify-content : center;
+  align-items : center;
+  background-color:#3d231b;
+  height : 100%;
+  color : #FFF;
+
+}
+.right{
+  display : flex;
+  justify-content : center;
+  align-items : center;
+  background-color:#FFF;
+  height : 100%;
+  color : #3d231b;
+  overflow: scroll;
+}
 
 .filemanager {
 	background-color: #23232e;

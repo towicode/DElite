@@ -11,6 +11,10 @@ import json
 import requests
 import random
 import string
+import os
+from os import listdir
+from os.path import isfile, join
+
 
 
 class DEAccountListView(ListView):
@@ -149,11 +153,14 @@ def de_app_get_information(request):
         except:
             pass
 
-    return JsonResponse(data)
+    return JsonResponse(data)   
+
 
 def de_file_list(request):
     data = {"response":False}
     path = request.GET.get('path', None)
+    tree = request.GET.get('tree', False)
+    listchildren = request.GET.get('listchildren', False)
 
     
     if path is None:
@@ -174,7 +181,30 @@ def de_file_list(request):
             auth_headers = {"Authorization": "Bearer " + acc.DEToken}
             r = requests.get(url, headers=auth_headers, params=query_params)
             r.raise_for_status()
-            return JsonResponse(r.json())
+
+            if (not tree):
+                return JsonResponse(r.json())
+
+
+            children = []
+            for m in r.json()['folders']:
+                children.append({"text": m['label'], "id": m['label'], "children":  True})
+            
+            for n in r.json()['files']:
+                children.append({"text": n['label'], "id": n['label'], "children":  False, "icon": "file"})
+
+
+            if listchildren:
+                treedata = children
+
+            else :
+                treedata = {
+                    'id': r.json()['label'],
+                    'text' : r.json()['label'],
+                    'children' : children
+                }
+            return JsonResponse(treedata, safe=False)
+
         except Exception as e:
             print (str(e))
             print ("There was an exception")
@@ -188,15 +218,11 @@ def de_submit_app(request):
     if request.method == "POST":
 
 
-        print("aaa")
         form_data = json.loads(request.body.decode())
-        print("bbb")
         system_id = form_data['system_id']
         app_id = form_data['app_id']
         config = form_data['config']
         username = form_data['username']
-
-        print(config)
 
         letters = string.ascii_lowercase
         m=''.join(random.choice(letters) for i in range(15))
@@ -223,6 +249,77 @@ def de_submit_app(request):
 
             except:
                 pass
+
+    return JsonResponse(data)
+
+
+def de_get_local_files(request):
+    """ Returns a list of all folders and files in the local directory """
+
+    
+    data = {"response":False}
+
+    username = None
+
+    if request.user.is_authenticated:
+        username = request.user.username
+        try:
+            acc = DEAccount.objects.get(djangouser__username=username)
+            onlyfiles = [f for f in listdir("media") if isfile(join("media", f))]
+            return JsonResponse(onlyfiles, safe=False)
+
+        except Exception as e:
+            print (str(e))
+            print ("There was an exception")
+            pass
+
+    return JsonResponse(data)
+
+
+
+def de_create_ticket(request):
+    """ Creates a ticket to the provided path
+
+    Args:
+    path : Irods path to the requested file
+    """
+    data = {"response":False}
+
+    if request.method == "POST":
+
+        form_data = json.loads(request.body.decode())
+        path = form_data['path']
+
+        request_body = {
+            "paths" : [
+                path,
+            ]
+        }
+
+        request_body = json.dumps(request_body)
+
+        print(request_body)
+
+        username = None
+        if request.user.is_authenticated:
+            username = request.user.username
+            try:
+                acc = DEAccount.objects.get(djangouser__username=username)
+                auth_headers = {"Authorization": "Bearer " + acc.DEToken}
+                r = requests.post("https://de.cyverse.org/terrain/secured/filesystem/tickets?public=1", headers=auth_headers, data=request_body)
+                r.raise_for_status()
+                ticketdata = r.json()
+                ticket = ticketdata['tickets'][0]['ticket-id']
+                path = ticketdata['tickets'][0]['path']
+                print (ticket + " " + path)
+
+                myCmd = os.popen('iget -t '+ticket+" '"+path+"' media").read()
+                return JsonResponse(r.json())
+
+            except Exception as e:
+                print(type(e))
+                print(str(e))
+                print (e.response.text)
 
     return JsonResponse(data)
 
