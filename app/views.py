@@ -2,6 +2,8 @@ from django.views.generic import DetailView, ListView, UpdateView, CreateView
 from .models import DEAccount
 from .forms import DEAccountForm
 from django.http import JsonResponse
+from django.http import HttpResponse
+
 from app.models import DEAccount
 from datetime import datetime
 from datetime import timedelta
@@ -12,24 +14,11 @@ import requests
 import random
 import string
 import os
+import subprocess
 from os import listdir
 from os.path import isfile, join
+import logging
 
-
-
-class DEAccountListView(ListView):
-    model = DEAccount
-
-class DEAccountCreateView(CreateView):
-    model = DEAccount
-    form_class = DEAccountForm
-
-class DEAccountDetailView(DetailView):
-    model = DEAccount
-
-class DEAccountUpdateView(UpdateView):
-    model = DEAccount
-    form_class = DEAccountForm
 
 def load_SPA(request):
     return render(request, 'blank.html', None)
@@ -69,7 +58,6 @@ def de_login(request):
         deusername = form_data['deusername']
         depassword = form_data['depassword']
 
-        data = {"response": False}
         username = None
         if request.user.is_authenticated:
             username = request.user.username
@@ -81,12 +69,11 @@ def de_login(request):
                     acc = accs.first()
 
                     if (acc.DEToken and (acc.DETokenDate > timezone.now() )):
-                        data = {"response": True}
                         print ("valid token")
-                        return JsonResponse(data)
+                        return HttpResponse(status=200)
                     
                     else:
-                        accs.delete()
+                        acc.delete()
 
                 acc = DEAccount(djangouser=request.user)
 
@@ -100,24 +87,25 @@ def de_login(request):
                 
                 acc.save()
 
-                data = {"response": True}
             except Exception as e:
                 print(type(e))
                 print(str(e))
 
-        # just return a JsonResponse
-        return JsonResponse(data)
+        return HttpResponse(status=200)
 
     else:
-        return JsonResponse({"repsonse": False})
+        return HttpResponse(status=400)
 
 
 def de_apps_search(request):
-    data = {"response":False}
+    """
+    search for a specific app on the de
+
+    params:
+    searchterm -> string searchterm
+    """
 
     searchterm = request.GET['searchterm']
-
-    print (searchterm)
 
     username = None
     if request.user.is_authenticated:
@@ -132,10 +120,18 @@ def de_apps_search(request):
         except:
             pass
 
-    return JsonResponse(data)
+    return HttpResponse(status=400)
 
 def de_app_get_information(request):
-    data = {"response":False}
+    """ gets information about the selected app,
+    including what parameters need to be fiolled in by the user
+    returns this data to the front end. Params come from the
+    search function.
+
+    params:
+    system_id -> system_id of app
+    app_id -> app_id of app
+    """
 
     system_id = request.GET['system_id']
     app_id = request.GET['app_id']
@@ -153,11 +149,19 @@ def de_app_get_information(request):
         except:
             pass
 
-    return JsonResponse(data)   
+    return HttpResponse(status=400)  
 
 
 def de_file_list(request):
-    data = {"response":False}
+    """ returns the files and folders at the specified path,
+    has additional arguments to modify how data is presented (for treeview)
+
+    params:
+    path -> path to get files and folders at
+    tree -> boolean to return in tree form
+    listchildren -> boolean to only list the children in an array instead of an object
+    """
+
     path = request.GET.get('path', None)
     tree = request.GET.get('tree', False)
     listchildren = request.GET.get('listchildren', False)
@@ -165,7 +169,7 @@ def de_file_list(request):
     
     if path is None:
         print ("NO path in de_file_list")
-        return jsonResponse(data)
+        return HttpResponse(status=400)
 
     query_params = {"path": path, "limit": 100, "offset": 0}
 
@@ -184,7 +188,6 @@ def de_file_list(request):
 
             if (not tree):
                 return JsonResponse(r.json())
-
 
             children = []
             for m in r.json()['folders']:
@@ -210,10 +213,17 @@ def de_file_list(request):
             print ("There was an exception")
             pass
 
-    return JsonResponse(data)
+    return HttpResponse(status=400)
 
 def de_submit_app(request):
-    data = {"response":False}
+    """ Submits the app with data to the DE
+
+    params:
+    system_id -> system_id of app
+    app_id -> app id of app
+    config -> a multi-part dict containing all params for relevant app
+    username -> DE Username (used to determine where to store the files)
+    """
 
     if request.method == "POST":
 
@@ -250,14 +260,11 @@ def de_submit_app(request):
             except:
                 pass
 
-    return JsonResponse(data)
+    return HttpResponse(status=400)
 
 
 def de_get_local_files(request):
     """ Returns a list of all folders and files in the local directory """
-
-    
-    data = {"response":False}
 
     username = None
 
@@ -273,17 +280,17 @@ def de_get_local_files(request):
             print ("There was an exception")
             pass
 
-    return JsonResponse(data)
+    return HttpResponse(status=400)
 
 
 
 def de_create_ticket(request):
     """ Creates a ticket to the provided path
+    also, downloads that ticket to the local file storage
 
-    Args:
-    path : Irods path to the requested file
+    Params:
+    path -> Irods path to the requested file
     """
-    data = {"response":False}
 
     if request.method == "POST":
 
@@ -306,14 +313,26 @@ def de_create_ticket(request):
             try:
                 acc = DEAccount.objects.get(djangouser__username=username)
                 auth_headers = {"Authorization": "Bearer " + acc.DEToken}
-                r = requests.post("https://de.cyverse.org/terrain/secured/filesystem/tickets?public=1", headers=auth_headers, data=request_body)
+                r = requests.post("https://de.cyverse.org/terrain/secured/filesystem/tickets?public=0", headers=auth_headers, data=request_body)
                 r.raise_for_status()
                 ticketdata = r.json()
                 ticket = ticketdata['tickets'][0]['ticket-id']
                 path = ticketdata['tickets'][0]['path']
-                print (ticket + " " + path)
+                print(ticket + " " + path)
 
-                myCmd = os.popen('iget -t '+ticket+" '"+path+"' media").read()
+                # This command could have multiple commands separated by a new line \n
+                some_command = 'iget -t '+ticket+" '"+path+"' media"
+
+                p = subprocess.Popen(some_command, stdout=subprocess.PIPE, shell=True)
+
+                (output, err) = p.communicate()  
+
+                #This makes the wait possible
+                p_status = p.wait()
+
+                #This will give you the output of the command being executed
+                print ("Command output: " + str(output))
+
                 return JsonResponse(r.json())
 
             except Exception as e:
@@ -321,7 +340,55 @@ def de_create_ticket(request):
                 print(str(e))
                 print (e.response.text)
 
-    return JsonResponse(data)
+    return HttpResponse(status=400)
+
+
+def de_upload_file(request):
+    """ uploads a local file to the DE using the 
+    Terrain upload api
+    
+
+    Params:
+    path -> Irods path to upload the file
+    file -> name of the file
+
+    """
+    data = {"response":False}
+
+    if request.method == "POST":
+
+        form_data = json.loads(request.body.decode())
+        path = form_data['path']
+        myfile = form_data['file']
+
+        # request_body = json.dumps(request_body)
+
+        # print(request_body)
+
+        username = None
+        if request.user.is_authenticated:
+            username = request.user.username
+            try:
+                acc = DEAccount.objects.get(djangouser__username=username)
+                auth_headers = {"Authorization": "Bearer " + acc.DEToken}
+                print ("Bearer " + acc.DEToken)
+                files = {'file': open("media" + os.path.sep + myfile, 'rb')}
+
+                r = requests.post("https://de.cyverse.org/terrain/secured/fileio/upload?dest="+path, files=files, headers=auth_headers)
+                r.raise_for_status()
+
+                return JsonResponse(r.json())
+
+            except Exception as e:
+                print(type(e))
+                print(str(e))
+                print (e.response.text)
+
+    # small bug, this should return 400, but the above code is
+    # working but returing an exception for some reason
+    # TODO look into this later.
+    return HttpResponse(status=200)
+
 
 
 

@@ -49,13 +49,16 @@
   var showLoader = function () {
     $('#loader').show();
     $('#delitemain').parent().parent().css("pointer-events", "none")
-    $('#delitemain').parent().parent().css("background-color", "gray")
+    $('#delitemain').css("filter", "grayscale(100%)")
+    $('#delitemain').css("filter", "blur(2px)")
+    //$('#delitemain').parent().parent().css("background-color", "gray")
   }
 
   var hideLoader = function () {
     $('#loader').hide();
     $('#delitemain').parent().parent().css("pointer-events", "inherit")
-    $('#delitemain').parent().parent().css("background-color", "inherit")
+    $('#delitemain').css("filter", "none")
+    $('#delitemain').css("filter", "none")
   }
 
   //  ***************
@@ -127,7 +130,7 @@
     <h1>Welcome to DE<sub>lite</sub></h1>
         <hr/>
         <p>This is a demo using the DE Terrain API with Django. 
-        For more information please checkout the Github Here</p>
+        For more information please checkout the Github <a href="https://github.com/towicode/DElite"> Here </a></p>
     `
     $('#delitemain').html(home_html);
 
@@ -353,14 +356,28 @@
   // *** Transfer **
   // ***************
 
-  var applyTransferTemplate = async function () {
+  var cur_path = ""
+  var prev_path = ""
 
-    var un = $.getCookie("deusername");
-    var term = "/iplant/home/" + un;
-    var encoded = encodeURI(term);
+  var applyTransferTemplate = async function (path) {
+
+    path = typeof path !== 'undefined' ? path : null;
+
+    if (path == null) {
+      var un = $.getCookie("deusername");
+      cur_path = "/iplant/home/" + un;
+      prev_path = "/iplant/home"
+    } else {
+      cur_path = path;
+    }
+    if (cur_path.endsWith("/")) {
+      cur_path = cur_path.slice(0, -1);
+    }
+    prev_path = cur_path.substring(0, cur_path.lastIndexOf("/") + 1);
+
+    var encoded = encodeURI(cur_path);
 
     $.showLoader();
-
 
     try {
       let [responsea, responseb] = await Promise.all([
@@ -373,13 +390,21 @@
         responseb.json(),
       ]);
 
-      console.log(raw_data);
-      console.log(local_data);
+
 
       var folders = ``;
+
+      folders += `
+        <div>
+            <a class="transferfolder" href="#" data-path="${prev_path}">
+              <span>
+                <div class="ficon"></div> <------
+              </span>
+            </a>
+          </div>
+      `
       for (var i = 0; i < raw_data.folders.length; i++) {
         var folder = raw_data.folders[i];
-        console.log(folder);
         var new_folder = `
           <div>
             <a class="transferfolder" href="#" data-path="${folder.path}">
@@ -401,7 +426,7 @@
 
       var localfiles = ``;
       for (var i = 0; i < local_data.length; i++) {
-        var new_localfile = `<option>${local_data[i]}</option>`;
+        var new_localfile = `<option data-info="${local_data[i]}">${local_data[i]}</option>`;
         localfiles += new_localfile;
       }
 
@@ -409,7 +434,7 @@
         <div class="container">
           <div class="row">
             <div class="col-sm-5 ">
-              <h3 id="transferpath"> /Path/To/Wherever </h3>
+              <h3 id="transferpath"> ${cur_path} </h3>
               <div class = "transferbox">
                 <div id="transferremotefolders">${folders}</div>
                 <select id="transferremotebox" class="leftbox" size=25>
@@ -439,33 +464,73 @@
       $('#delitemain').html(transferHtml);
       $.hideLoader();
 
-      $(document).on("click", "#rightbutton",
-        function (event) {
-          console.log("testing");
-          console.log($("#transferremotebox :selected").text()); // The text content of the selected option
+      var left_box = $('#transferremotebox').parent()
+      var right_box = $('#transferlocalbox').parent()
 
-          var path = $("#transferremotebox :selected").data('info');
-          var data = {
-            'path': path
-          }
-          console.log(data)
-          fetch("deticket/", {
-            method: 'POST', 
-            body: JSON.stringify(data),
-            headers: {
-              'Content-Type': 'application/json',
-              "X-CSRFToken": csrftoken
-            }
-          }).then(res => res.json())
-            .then(response => {
-              console.log(response);
-            });
-        });
+      right_box.height(left_box.height())
     }
     catch (err) {
       console.log(err);
+      $.hideLoader();
     };
   }
+
+  $(document).on("click", "#rightbutton",
+    function (event) {
+      $.showLoader();
+
+      var path = $("#transferremotebox :selected").data('info');
+      var data = {
+        'path': path
+      }
+      console.log(data)
+      fetch("deticket/", {
+        method: 'POST',
+        body: JSON.stringify(data),
+        headers: {
+          'Content-Type': 'application/json',
+          "X-CSRFToken": csrftoken
+        }
+      }).then(res => res.json())
+        .then(response => {
+          $.hideLoader();
+          applyTransferTemplate(cur_path)
+        });
+    }
+  );
+
+  $(document).on("click", "#leftbutton",
+    function (event) {
+      $.showLoader();
+
+      var file = $("#transferlocalbox :selected").data('info');
+      var data = {
+        'file': file,
+        'path': cur_path
+      }
+      console.log(data)
+      fetch("deupload/", {
+        method: 'POST',
+        body: JSON.stringify(data),
+        headers: {
+          'Content-Type': 'application/json',
+          "X-CSRFToken": csrftoken
+        }
+      }).then(res => {
+        $.hideLoader();
+        applyTransferTemplate(cur_path)
+      })
+
+    });
+
+
+
+  $(document).on("click", ".transferfolder",
+    function (event) {
+      var elem = $(event.target).parent()
+      var mydata = elem.data("path")
+      applyTransferTemplate(mydata);
+    });
 
 
 
@@ -519,38 +584,6 @@
   }
 
   reindexPage();
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

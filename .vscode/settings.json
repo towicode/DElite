@@ -1,7 +1,0 @@
-{
-    "python.pythonPath": "/Users/todd/miniconda3/envs/django/bin/python",
-
-    "python.linting.pylintArgs": [
-        "--load-plugins=pylint_django"
-   ],
-}
