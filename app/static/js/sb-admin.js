@@ -72,7 +72,7 @@
       <form id="deloginform">
         <div class="form-group">
           <div class="form-label-group">
-            <input type="email" id="inputEmail" class="form-control" placeholder="DE Username" required="required" autofocus="autofocus">
+            <input type="text" id="inputEmail" class="form-control" placeholder="DE Username" required="required" autofocus="autofocus">
             <label for="inputEmail">DE Username</label>
           </div>
         </div>
@@ -118,7 +118,7 @@
           }
 
         })
-        .catch(error => console.error('Error:', error));
+        .catch(error => toastr.error("Sorry there was an error, try reloading and try again"));
 
       hideLoader();
     });
@@ -344,6 +344,7 @@
         })
         .catch(error => {
           console.error('Error:', error);
+          toastr.error("Sorry there was an error, try reloading and try again")
           hideLoader();
         });
 
@@ -540,45 +541,39 @@
   var reindexPage = function (term = "home", args = null) {
     showLoader();
     fetch('deinfoset/')
-      .then(response => response.json())
-      .then(data => {
-
-        if (data.response == true) {
-
-          switch (term) {
-            case "home":
-              applyHomeTemplate();
+      .then(response => {
+        switch (term) {
+          case "home":
+            applyHomeTemplate();
+            $('#jstree_demo_div').html("");
+            break;
+          case "apps":
+            if (args != null) {
+              applySearchTemplate(args);
               $('#jstree_demo_div').html("");
               break;
-            case "apps":
-              if (args != null) {
-                applySearchTemplate(args);
-                $('#jstree_demo_div').html("");
-                break;
-              }
-              applySearchTemplate();
-              $('#jstree_demo_div').html("");
-              break;
-            case "app":
-              $('#jstree_demo_div').html("");
-              applyAppTemplate(args);
-              break;
-            case "files":
-              $('#jstree_demo_div').html("");
-              //applyFilesTemplate();
-              applyTransferTemplate();
+            }
+            applySearchTemplate();
+            $('#jstree_demo_div').html("");
+            break;
+          case "app":
+            $('#jstree_demo_div').html("");
+            applyAppTemplate(args);
+            break;
+          case "files":
+            $('#jstree_demo_div').html("");
+            //applyFilesTemplate();
+            applyTransferTemplate();
 
-              break;
-            case "tree":
-              applyTreeTemplate();
-              break;
-
-
-          }
-        } else {
-          applyTemplateLogin();
+            break;
+          case "tree":
+            applyTreeTemplate();
+            break;
         }
-      })
+      }).catch(error => {
+        console.log(error)
+        applyTemplateLogin();
+      });
 
     hideLoader();
   }

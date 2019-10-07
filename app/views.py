@@ -21,9 +21,11 @@ import logging
 
 
 def load_SPA(request):
+    """ simple view to render our HTML"""
     return render(request, 'blank.html', None)
 
 def is_user_logged_in(request):
+    """ returns if the user is logged into the django system, NOT the DE system"""
 
     print (request)
 
@@ -34,21 +36,32 @@ def is_user_logged_in(request):
     return JsonResponse(data)
 
 def user_de_info_set(request):
+    """ returns if the user has their token set for DE usage 
+    
+    """
 
-    data = {"response":False}
     username = None
     if request.user.is_authenticated:
         username = request.user.username
         try:
             acc = DEAccount.objects.get(djangouser__username=username)
             if (acc.DEToken and (acc.DETokenDate > timezone.now() )):
-                data = {"response": True}
+                return HttpResponse(status=200)
         except:
             pass
 
-    return JsonResponse(data)
+    return HttpResponse(status=400)
 
 def de_login(request):
+    """
+    Logs into the DE via the Terrain API, stores that Token in the
+    Django Model associated with the current user 
+    
+    
+    params:
+    deusername -> string
+    depassword -> string
+    """
 
     if request.method == "POST":
 
@@ -92,7 +105,6 @@ def de_login(request):
                 print(str(e))
 
         return HttpResponse(status=200)
-
     else:
         return HttpResponse(status=400)
 
@@ -252,12 +264,18 @@ def de_submit_app(request):
             username = request.user.username
             try:
                 acc = DEAccount.objects.get(djangouser__username=username)
+                print ("1")
                 auth_headers = {"Authorization": "Bearer " + acc.DEToken}
+                print ("2")
                 r = requests.post("https://de.cyverse.org/terrain/analyses", headers=auth_headers, json=request_body)
+                print ("3")
+                print (r.content)
                 r.raise_for_status()
+                print ("4")
                 return JsonResponse(r.json())
 
             except:
+                print ("testing here")
                 pass
 
     return HttpResponse(status=400)

@@ -19,6 +19,9 @@
 
 
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.2.1/themes/default/style.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.css" />
+
+
 
   <!-- Custom styles for this template-->
   <link href="/static/css/sb-admin.css" rel="stylesheet">
@@ -73,7 +76,7 @@
     <!-- Sidebar -->
     <ul class="sidebar navbar-nav">
       <li class="nav-item">
-        <a class="nav-link" href="index.html">
+        <a class="nav-link" href="#">
           <i class="fas fa-fw fa-tachometer-alt"></i>
           <span>Home</span>
         </a>
@@ -690,6 +693,11 @@
 	border-bottom-color: #30837c;
 }
 
+.toast-error {
+
+	background-color: #BD362F !important;
+}
+
 
 @media (max-width: 1024px) {
 	#bsaHolder, footer{ display:none;}
@@ -725,6 +733,9 @@
 
   <!-- Core plugin JavaScript-->
   <script src="{% static "vendor/jquery-easing/jquery.easing.min.js" %}"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+
+
 
   <!-- Custom scripts for all pages-->
   <script src="{% static "js/jstree.js" %}"></script>
