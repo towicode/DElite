@@ -111,11 +111,17 @@
         }
       }).then(res => res.json())
         .then(response => {
-          console.log('Success:', JSON.stringify(response))
-          if (response.response == true) {
+
+          if (response.status === 400) {
+            toastr.error("Sorry there was an error, try reloading and try again")
+          } else {
+
             console.log("logged in");
             reindexPage();
+            
+
           }
+
 
         })
         .catch(error => toastr.error("Sorry there was an error, try reloading and try again"));
@@ -540,8 +546,13 @@
   //  ***************
   var reindexPage = function (term = "home", args = null) {
     showLoader();
+    console.log("hello")
     fetch('deinfoset/')
       .then(response => {
+        if (response.status === 400) {
+          applyTemplateLogin();
+          return;
+        }
         switch (term) {
           case "home":
             applyHomeTemplate();
@@ -571,6 +582,7 @@
             break;
         }
       }).catch(error => {
+        console.log("hello??")
         console.log(error)
         applyTemplateLogin();
       });

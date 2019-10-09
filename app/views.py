@@ -18,6 +18,7 @@ import subprocess
 from os import listdir
 from os.path import isfile, join
 import logging
+import time
 
 
 def load_SPA(request):
@@ -206,7 +207,15 @@ def de_file_list(request):
                 children.append({"text": m['label'], "id": m['label'], "children":  True})
             
             for n in r.json()['files']:
-                children.append({"text": n['label'], "id": n['label'], "children":  False, "icon": "file"})
+                
+
+                test = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(n['date-modified']/1000.0))
+                print (test)
+
+                size = sizeof_fmt(n['file-size'])
+
+
+                children.append({"text": n['label'] +" | " + test +  " | " + size, "id": n['label'], "children":  False, "icon": "file"})
 
 
             if listchildren:
@@ -407,6 +416,13 @@ def de_upload_file(request):
     # TODO look into this later.
     return HttpResponse(status=200)
 
+
+def sizeof_fmt(num, suffix='B'):
+    for unit in ['','Ki','Mi','Gi','Ti','Pi','Ei','Zi']:
+        if abs(num) < 1024.0:
+            return "%3.1f%s%s" % (num, unit, suffix)
+        num /= 1024.0
+    return "%.1f%s%s" % (num, 'Yi', suffix)
 
 
 
