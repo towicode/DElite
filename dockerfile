@@ -31,7 +31,6 @@ RUN python3.6 -m pip install -r requirements.txt
 
 # copy app files
 COPY app app
-COPY media media
 COPY manage.py .
 
 # setup database
