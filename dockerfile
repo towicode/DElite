@@ -4,10 +4,10 @@ FROM ubuntu:16.04
 # First we install python
 RUN apt-get update && \
   apt-get install -y software-properties-common && \
-  add-apt-repository ppa:jonathonf/python-3.6
+  add-apt-repository ppa:deadsnakes/ppa
 RUN apt-get update
 
-RUN apt-get install -y build-essential python3.6 python3.6-dev python3-pip python3.6-venv
+RUN apt-get install -y build-essential python3.6 python3.6-dev python3-pip python3.6-venv curl
 RUN apt-get install -y git
 
 RUN python3.6 -m pip install pip --upgrade
@@ -31,6 +31,7 @@ RUN python3.6 -m pip install -r requirements.txt
 
 # copy app files
 COPY app app
+COPY runme.sh .
 COPY manage.py .
 
 # setup database
@@ -40,4 +41,4 @@ RUN python3.6 manage.py migrate
 RUN echo "from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.create_superuser('admin', 'admin@admin.com', 'admin')" | python3.6 manage.py shell
 
 # run server
-CMD [ "python3.6", "manage.py", "runserver", "0.0.0.0:8000" ]
+CMD [ "bash", "runme.sh"] 
