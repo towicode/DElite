@@ -3,6 +3,7 @@ from .models import DEAccount
 from .forms import DEAccountForm
 from django.http import JsonResponse
 from django.http import HttpResponse
+from django.contrib.auth.models import User
 
 from app.models import DEAccount
 from datetime import datetime
@@ -19,6 +20,8 @@ from os import listdir
 from os.path import isfile, join
 import logging
 import time
+import traceback
+from django.contrib.auth import authenticate, login
 
 
 def load_SPA(request):
@@ -68,47 +71,76 @@ def de_login(request):
 
         form_data = json.loads(request.body.decode())
 
-        
         deusername = form_data['deusername']
         depassword = form_data['depassword']
 
-        username = None
-        if request.user.is_authenticated:
-            username = request.user.username
+        if User.objects.filter(username=deusername).exists():
             try:
-                accs = DEAccount.objects.filter(djangouser__username=username)
-
-                if (len(accs)) >= 1:
-
-                    acc = accs.first()
-
-                    if (acc.DEToken and (acc.DETokenDate > timezone.now() )):
-                        print ("valid token")
-                        return HttpResponse(status=200)
-                    
-                    else:
-                        acc.delete()
-
-                acc = DEAccount(djangouser=request.user)
+                
 
                 r = requests.get("https://de.cyverse.org/terrain/token", auth=(deusername, depassword))
                 r.raise_for_status()
                 token = r.json()['access_token']
                 time = int(r.json()['expires_in'])
 
+                ## Authenticated by cyverse after this point
+
+                accs = DEAccount.objects.filter(djangouser__username=deusername)
+
+                if (len(accs)) >= 1:
+
+                    acc = accs.first()
+
+                    if (acc.DEToken and (acc.DETokenDate > timezone.now() )):
+                        user = User.objects.filter(username=deusername).first()
+                        login(request, user)
+                        return HttpResponse(status=200)
+                    
+                    else:
+                        print("deleting old token")
+                        acc.delete()
+
+                user = User.objects.filter(username=deusername).first()
+
+                acc = DEAccount(djangouser=user)
                 acc.DEToken = token
                 acc.DETokenDate = timezone.now() + timedelta(seconds=time) 
-                
+                    
                 acc.save()
+                login(request, user)
+                return HttpResponse(status=200)
 
             except Exception as e:
                 print(type(e))
                 print(str(e))
+                return HttpResponse(status=400)
+                
+        else:
+            try:
+                print("b")
+                r = requests.get("https://de.cyverse.org/terrain/token", auth=(deusername, depassword))
+                r.raise_for_status()
+                token = r.json()['access_token']
+                time = int(r.json()['expires_in'])
 
-        return HttpResponse(status=200)
-    else:
-        return HttpResponse(status=400)
+                # Authenticated by cyverse after this point
 
+                user = User.objects.create_user(username=deusername, email=deusername+'@beatles.com')
+                acc = DEAccount(djangouser=user)
+                acc.DEToken = token
+                acc.DETokenDate = timezone.now() + timedelta(seconds=time) 
+                acc.save()
+                user.save()
+                login(request, user)
+                return HttpResponse(status=200)
+            except Exception as e:
+                print("c")
+                traceback.print_exc()
+                print(type(e))
+                print(str(e))
+                return HttpResponse(status=400)
+    print("f")
+    return HttpResponse(status=400)
 
 def de_apps_search(request):
     """

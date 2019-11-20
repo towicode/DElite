@@ -31,6 +31,7 @@ RUN python3.6 -m pip install -r requirements.txt
 
 # copy app files
 COPY app app
+COPY media media
 COPY runme.sh .
 COPY manage.py .
 

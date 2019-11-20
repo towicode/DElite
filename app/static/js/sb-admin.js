@@ -94,14 +94,13 @@
 
   $(document).on("click", "#deloginbutton",
     function () {
-      showLoader();
+      $.showLoader();
       var deusername = $('#inputEmail').val();
       setCookie("deusername", deusername, 1);
       var depassword = $('#inputPassword').val();
 
       var url = 'delogin/';
       var data = { 'deusername': deusername, 'depassword': depassword };
-
       fetch(url, {
         method: 'POST', // or 'PUT'
         body: JSON.stringify(data), // data can be `string` or {object}!
@@ -109,8 +108,8 @@
           'Content-Type': 'application/json',
           "X-CSRFToken": csrftoken
         }
-      }).then(res => res.json())
-        .then(response => {
+      }).then(response => {
+          $.hideLoader();
 
           if (response.status === 400) {
             toastr.error("Sorry there was an error, try reloading and try again")
@@ -124,9 +123,11 @@
 
 
         })
-        .catch(error => toastr.error("Sorry there was an error, try reloading and try again"));
+        .catch(error => {
+          $.hideLoader();
+          toastr.error("Sorry there was an error, try reloading and try again");
+        });
 
-      hideLoader();
     });
 
 
@@ -154,7 +155,10 @@
 
   $('#menutree').click(function () {
     reindexPage("tree");
-    $.treeInit();
+  });
+
+  $('#menuhome').click(function () {
+    reindexPage("home");
   });
 
   // ****************
@@ -575,14 +579,13 @@
             $('#jstree_demo_div').html("");
             //applyFilesTemplate();
             applyTransferTemplate();
-
             break;
           case "tree":
+            $.treeInit();
             applyTreeTemplate();
             break;
         }
       }).catch(error => {
-        console.log("hello??")
         console.log(error)
         applyTemplateLogin();
       });
