@@ -48,9 +48,7 @@ docker build . --tag="delite"
 docker run -it -p 8000:8000 delite
 ```
 
-3. Login to the admin interface by visiting `localhost:8000/admin` the username:password is `admin:admin`
-
-4. visit the app at `localhost:8000`
+3. visit the app at `localhost:8000`
 
 ### Normal
 
@@ -76,11 +74,9 @@ Create your user account
 
 `python manage.py createsuperuser`
 
-Run the server & login to the admin interface
+Run the server 
 
-1. `python manage.py runserver`
-2. http://localhost:8000/admin
-
+`python manage.py runserver`
 
 open the app
 
